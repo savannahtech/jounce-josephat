@@ -1,0 +1,23 @@
+app:
+  name: flask-server
+  namespace: default
+  group: backend
+  replicaCount: 1
+  secrets:
+    name: app-secrets
+  service:
+    name: app-service
+    type: ClusterIP
+    port: 80
+
+ingress:
+  name: app-ingress
+  host: api-eks.ratiba.io
+  certificateArn: "arn:aws:acm:eu-west-2:888441908670:certificate/7727c4ff-8a5d-4d57-8814-0e1059fafebe"
+
+redis:
+  name: redis
+  image: redis:6.2-alpine
+  service:
+    name: redis-service
+    port: 6379

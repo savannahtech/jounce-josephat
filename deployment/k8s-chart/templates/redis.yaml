@@ -1,0 +1,40 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.redis.name }}
+  namespace: {{ .Values.app.namespace }}
+  labels:
+    app: {{ .Values.redis.name }}
+    group: {{ .Values.app.group }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.redis.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.redis.name }}
+        group: {{ .Values.app.group }}
+    spec:
+      containers:
+        - name: redis
+          image: {{ .Values.redis.image }}
+          ports:
+            - containerPort: {{ .Values.redis.service.port }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.redis.service.name }}
+  namespace: {{ .Values.app.namespace }}
+  labels:
+    app: {{ .Values.redis.name }}
+    group: {{ .Values.app.group }}
+spec:
+  selector:
+    app: {{ .Values.redis.name }}
+  ports:
+    - port: {{ .Values.redis.service.port }}
+      targetPort: {{ .Values.redis.service.port }}

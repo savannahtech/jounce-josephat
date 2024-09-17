@@ -1,0 +1,25 @@
+# Everything the developer needs in addition to the production requirements
+-r prod.txt
+
+# Testing
+pytest
+pytest-cov
+tox
+coverage
+Flask-WebTest
+WebTest
+factory-boy
+pdbpp
+
+# Lint and code style
+black
+flake8
+flake8-isort
+isort
+pep8-naming
+
+# Security
+# checks for security issues in the Python code.
+bandit
+# checks for known vulnerabilities in the dependencies.
+safety

@@ -1,0 +1,87 @@
+image:
+  name: docker:latest
+  entrypoint: [""]
+
+
+services:
+  - name: docker:dind
+    entrypoint: ["env", "-u", "DOCKER_HOST"]
+    command: ["dockerd-entrypoint.sh"]
+
+stages:
+  - build
+  - test
+  - deploy
+
+variables:
+  DOCKER_HOST: tcp://docker:2375/
+  DOCKER_DRIVER: overlay2
+  AWS_REGION: eu-west-2
+  ECR_REGISTRY: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+  ECR_REPOSITORY: eks_dev
+  DOCKER_IMAGE: $ECR_REGISTRY/$ECR_REPOSITORY:$CI_COMMIT_SHA
+  CLUSTER_NAME: dev-eks
+
+
+build:
+  stage: build
+  services:
+    - docker:dind
+  only:
+    - develop
+    - main
+  before_script:
+    - apk add python3
+    - apk add py3-pip --update
+    - pip3 install awscli --break-system-packages # TODO! find permanent fix for this  
+    - echo "Logging into AWS ECR"
+    - aws sts get-caller-identity
+    - $(aws ecr get-login --no-include-email --region  ${AWS_REGION})
+
+  script:
+    - echo "Building Docker Image"
+    - docker build -q -f $CI_PROJECT_DIR/Dockerfile . -t $DOCKER_IMAGE --build-arg PORT=$APP_PORT --build-arg FLASK_APP=$FLASK_APP --build-arg FLASK_DEBUG=$FLASK_DEBUG --build-arg FLASK_ENV=$FLASK_ENV --build-arg SECRET_KEY=$SECRET_KEY 
+    - echo "Pushing Docker Image to ECR"
+    - docker push $DOCKER_IMAGE
+
+
+code_tests:
+  stage: test
+  image: python:3.12-slim
+  script:
+    - pip install --upgrade pip
+    - pip install virtualenv
+    - virtualenv --python=python3 venv
+    - source venv/bin/activate
+    - pip install -r requirements/dev.txt
+    - tox -r
+
+
+deploy_to_testing:
+  image: devth/helm
+  stage: deploy
+  only:
+    - develop
+    - main
+  before_script:
+    - apk add py3-pip --update
+    - pip3 install awscli --break-system-packages # TODO! find permanent fix for this 
+    - aws eks --region ${AWS_REGION} update-kubeconfig --name ${CLUSTER_NAME}
+    - helm version
+  script:
+    - helm upgrade
+      --install
+      --namespace="default"
+      --set app.image="$DOCKER_IMAGE"
+      --set app.service.port=$SERVICE_PORT
+      --set app.container.env.port=$APP_PORT
+      --set app.container.env.flask_debug="$UAT_FLASK_DEBUG"
+      --set app.container.env.flask_env="$UAT_FLASK_ENV"
+      --set app.container.env.cache_redis_host="redis-service"
+      --set app.container.env.jounce_env="UAT"
+      --set app.container.env.schedule_type="monthly"
+      --set ingress.host=$UAT_HOST_DOMAIN
+      --wait
+      --timeout 600s
+      app-release
+      ./deployment/k8s-chart

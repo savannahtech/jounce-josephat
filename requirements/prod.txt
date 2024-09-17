@@ -1,0 +1,30 @@
+# Everything needed in production
+
+# Flask
+Flask
+Werkzeug
+click
+# Database
+Flask-SQLAlchemy
+SQLAlchemy
+SQLAlchemy-Utils
+psycopg2-binary
+# Migrations
+Flask-Migrate
+# Deployment
+gevent
+gunicorn
+supervisor
+# Caching
+Flask-Caching
+requests
+celery[redis]
+flask-restful
+marshmallow
+PyJWT
+webargs
+Flask-JWT-Extended
+matplotlib
+plotly
+Flask-Injector 
+injector

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ranking LLM Metrics By Metric Name</title>
+</head>
+<body>
+    <h1>Ranking LLM Metrics By Metric Name</h1>
+
+    <!-- Dropdown for selecting the metric -->
+    <form id="metricForm" method="POST" action="/visualize" style="margin-bottom: 5px;">
+        <label for="metric_name">Select Metric:</label>
+        <select name="metric_name" id="metric_name" onchange="document.getElementById('metricForm').submit()">
+            <option value="TTFT">Time to First Token (TTFT)</option>
+            <option value="TPS">Tokens Per Second (TPS)</option>
+            <option value="e2e_latency">End-to-End Latency (e2e_latency)</option>
+            <option value="RPS">Requests Per Second (RPS)</option>
+        </select>
+    </form>
+
+    <h2>Line Graph</h2>
+    <img src="{{ line_graph }}" alt="Line Graph">
+
+    <h2>Bar Graph</h2>
+    <div>{{ bar_graph|safe }}</div>
+</body>
+</html>

@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.app.name }}
+  namespace: {{ .Values.app.namespace }}
+  labels:
+    app: {{ .Values.app.name }}
+    group: {{ .Values.app.group }}
+spec:
+  replicas: {{ .Values.app.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.app.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.app.name }}
+        group: {{ .Values.app.group }}
+    spec:
+      initContainers:
+        - name: db-migrations
+          image: {{ .Values.app.image }}
+          imagePullPolicy: Always
+          command: ['sh', '-c', '/opt/jounce/entrypoint.sh']
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.secrets.name }}
+                  key: database-url
+            - name: FLASK_DEBUG
+              value: {{ .Values.app.container.env.flask_debug | quote }}
+            - name: FLASK_ENV
+              value: {{ .Values.app.container.env.flask_env | quote }}
+            - name: JOUNCE_ENV
+              value: {{ .Values.app.container.env.jounce_env | quote }}
+
+      containers:
+        - name: {{ .Values.app.name }}
+          image: {{ .Values.app.image }}
+          imagePullPolicy: Always
+          command: ["sh", "-c", "gunicorn --bind 0.0.0.0:5000 app:app"]
+          ports:
+            - containerPort: {{ .Values.app.container.env.port }}
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.secrets.name }}
+                  key: database-url
+            - name: FLASK_DEBUG
+              value: {{ .Values.app.container.env.flask_debug | quote }}
+            - name: FLASK_ENV
+              value: {{ .Values.app.container.env.flask_env | quote }}
+            - name: CACHE_REDIS_HOST
+              value: {{ .Values.app.container.env.cache_redis_host | quote }}
+            - name: JOUNCE_ENV
+              value: {{ .Values.app.container.env.jounce_env | quote }}

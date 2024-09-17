@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery-beat-app
+  namespace: {{ .Values.app.namespace }}
+  labels:
+    app: celery-beat-app
+    group: {{ .Values.app.group }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: celery-beat-app
+  template:
+    metadata:
+      labels:
+        app: celery-beat-app
+        group: {{ .Values.app.group }}
+    spec:
+      containers:
+        - name: celery-beat-app
+          image: {{ .Values.app.image }}
+          command: ['celery', '-A', 'src.celery', 'beat', '-l', 'INFO']
+          imagePullPolicy: Always
+          env:
+            - name: CELERY_BROKER_URL
+              value: redis://{{ .Values.redis.service.name }}:{{ .Values.redis.service.port }}/0
+            - name: CELERY_RESULT_BACKEND
+              value: redis://{{ .Values.redis.service.name }}:{{ .Values.redis.service.port }}/0
+            - name: SCHEDULE_TYPE
+              value: {{ .Values.app.container.env.schedule_type | quote }}
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.secrets.name }}
+                  key: database-url
+            - name: FLASK_DEBUG
+              value: {{ .Values.app.container.env.flask_debug | quote }}
+            - name: FLASK_ENV
+              value: {{ .Values.app.container.env.flask_env | quote }}
+            - name: CACHE_REDIS_HOST
+              value: {{ .Values.app.container.env.cache_redis_host | quote }}
+            - name: JOUNCE_ENV
+              value: {{ .Values.app.container.env.jounce_env | quote }}

@@ -1,0 +1,10 @@
+[run]
+source=src
+omit=version.py
+branch=True
+
+[html]
+directory=coverage
+
+[report]
+show_missing=True
